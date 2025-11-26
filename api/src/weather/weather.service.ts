@@ -61,7 +61,7 @@ export class WeatherService {
             trend = lastAvg > prevAvg + 0.5 ? 'increasing' : lastAvg < prevAvg - 0.5 ? 'decreasing' : 'stable';
         }
 
-        const alerts = [];
+        const alerts: String[] = [];
         if (avgTemp && avgTemp > 35) alerts.push('Calor extremo médio');
         if (avgHum && avgHum > 85) alerts.push('Umidade muito alta média');
 
