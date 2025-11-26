@@ -1,0 +1,51 @@
+version: "3.8"
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+      - rabbitmq
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-gdash}
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS:-guest}
+
+  python-producer:
+    image: python:3.11-slim
+    command: ["bash", "-c", "pip install pika requests && python /app/producer.py"]
+    volumes:
+      - ./workers/python:/app
+    depends_on:
+      - rabbitmq
+    restart: "no"
+
+  go-worker:
+    image: golang:1.21
+    command: ["bash", "-c", "cd /app && go run worker.go"]
+    volumes:
+      - ./workers/go:/app
+    depends_on:
+      - rabbitmq
+      - api
+    restart: "no"
